@@ -79,6 +79,7 @@ function changeDeviceList(devices) {
 }
 
 let connectedDevice;
+const bleService = '17b5290c-2e8b-11ed-a261-0242ac120002';
 
 async function startFind () {
   window.electronAPI.getDeviceList((event, deviceList) => {
@@ -89,15 +90,134 @@ async function startFind () {
   popup.classList.add('devices_show');
   console.log('Осуществляю поиск устройсва');
   connectedDevice = await navigator.bluetooth.requestDevice({
+    optionalServices: [bleService],
     acceptAllDevices: true
   })
   console.log('Устройство найдено!');
-  document.getElementById('device-name').innerHTML = connectedDevice.name || `ID: ${connectedDevice.id}`
+  document.getElementById('device-name').innerHTML = connectedDevice.name || `ID: ${connectedDevice.id}`;
+  // Ищем сервисы и прочую шушару
+  connection();
 }
 
-document.getElementById('find').addEventListener('click', startFind)
+document.getElementById('find').addEventListener('click', startFind);
 
 // Отправить ответ, что не выбрано устройство
 function cancelRequest() {
   window.electronAPI.cancelBluetoothRequest()
+}
+
+document.getElementById('start').addEventListener('click', readDataFromDevice);
+
+let gattCharacteristic;
+// Функция запускается после успешного подклчюения к устройству
+async function connection() {
+  // Получаем сервер
+  const server = await connectedDevice.gatt.connect();
+  // Получаем нужный нам сервис
+  const service = await server.getPrimaryService(bleService);
+  // Получаем характеристики
+  const characteristics = await service.getCharacteristics();
+  gattCharacteristic = characteristics;
+  // x
+  gattCharacteristic[0].addEventListener('characteristicvaluechanged',
+    handleChangedValueX);
+  // y
+  gattCharacteristic[1].addEventListener('characteristicvaluechanged',
+    handleChangedValueY);
+  document.querySelector('#start').disabled = false
+  document.querySelector('#stop').disabled = false
+  console.log('Успешно выполнено!');
+}
+
+// Функция для чтения x
+function handleChangedValueX(event) {
+  // Массив значений по x
+  let value = new Float32Array(event.target.value.buffer);
+  outputX.textContent = `Получены данные: ${value}`;
+  var now = new Date()
+  console.log('> ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + ' UV Index is ', value)
+}
+
+// Функция для чтения y
+function handleChangedValueY(event) {
+  // Функция для преобразования пакета
+  function bytesToString(arraysBytes) {
+    return new TextDecoder().decode(arraysBytes);
+  }
+  const buffer = event.target.value.buffer;
+  // Массив значений по x
+  const startMessage = new Int8Array(buffer.slice(0, 8));
+  const packNumber = new Int32Array(buffer.slice(8, 12));
+  const numberUMV = new Int16Array(buffer.slice(12, 14));
+  const startBracket = new Int8Array(buffer.slice(14, 15));
+  console.log(buffer.slice(15, 414));
+  const data = new Float32Array(buffer.slice(15, 415));
+  const endBracket = new Int8Array(buffer.slice(415, 416));
+  
+  const stringValue = bytesToString(startMessage);
+  const stringStartBracket = bytesToString(startBracket);
+  const stringEndBracket = bytesToString(endBracket);
+  console.log('Start message', stringValue);
+  console.log('Number pack: ', packNumber);
+  console.log('Number UMV: ', numberUMV);
+  console.log('Start bracket: ', stringStartBracket);
+  console.log('Number UMV: ', data);
+  console.log('End bracket: ', stringEndBracket);
+
+
+  outputY.textContent = `Получены данные: ${stringValue}, ${packNumber[0]}, ${numberUMV}, ${stringStartBracket}\n${data}\n${stringEndBracket}`;
+  // var now = new Date()
+  // console.log('> ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + ' UV Index is ', value)
+}
+
+document.getElementById('start').addEventListener('click', readDataFromDevice);
+document.getElementById('stop').addEventListener('click', stopDataFromDevice);
+
+// Функция будет читать данные
+function readDataFromDevice() {
+  // x
+  gattCharacteristic[0].startNotifications()
+  .then(_ => {
+    console.log('Start reading...')
+    document.querySelector('#start').disabled = true
+    document.querySelector('#stop').disabled = false
+  })
+  .catch(error => {
+    console.log('[ERROR] Start: ' + error)
+  })
+
+  // y
+  gattCharacteristic[1].startNotifications()
+  .then(_ => {
+    console.log('Start reading...')
+    document.querySelector('#start').disabled = true
+    document.querySelector('#stop').disabled = false
+  })
+  .catch(error => {
+    console.log('[ERROR] Start: ' + error)
+  })
+}
+
+// Функция отменяет чтение данных
+function stopDataFromDevice() {
+  gattCharacteristic[0].stopNotifications()
+  .then(_ => {
+    console.log('Stop reading...')
+    document.querySelector('#start').disabled = false
+    document.querySelector('#stop').disabled = true
+  })
+  .catch(error => {
+    console.log('[ERROR] Stop: ' + error)
+  })
+
+  // y
+  gattCharacteristic[1].stopNotifications()
+  .then(_ => {
+    console.log('Stop reading...')
+    document.querySelector('#start').disabled = false
+    document.querySelector('#stop').disabled = true
+  })
+  .catch(error => {
+    console.log('[ERROR] Stop: ' + error)
+  })
 }

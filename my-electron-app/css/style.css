@@ -90,3 +90,7 @@ button {
   padding: 5px;
   background:rgb(146, 151, 155);
 }
+
+button[disabled] {
+  background: rgb(255, 255, 255)
+}
