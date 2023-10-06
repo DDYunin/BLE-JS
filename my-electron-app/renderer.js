@@ -78,8 +78,9 @@ function changeDeviceList(devices) {
   });
 }
 
+let connectedDevice;
 
-async function testIt () {
+async function startFind () {
   window.electronAPI.getDeviceList((event, deviceList) => {
     // console.log(deviceList);
     changeDeviceList(deviceList);
@@ -87,44 +88,16 @@ async function testIt () {
   // Показываем модалку
   popup.classList.add('devices_show');
   console.log('Осуществляю поиск устройсва');
-  const device = await navigator.bluetooth.requestDevice({
+  connectedDevice = await navigator.bluetooth.requestDevice({
     acceptAllDevices: true
   })
   console.log('Устройство найдено!');
-  document.getElementById('device-name').innerHTML = device.name || `ID: ${device.id}`
+  document.getElementById('device-name').innerHTML = connectedDevice.name || `ID: ${connectedDevice.id}`
 }
 
-document.getElementById('clickme').addEventListener('click', testIt)
+document.getElementById('find').addEventListener('click', startFind)
 
 // Отправить ответ, что не выбрано устройство
 function cancelRequest() {
   window.electronAPI.cancelBluetoothRequest()
 }
-
-document.getElementById('cancel').addEventListener('click', cancelRequest)
-
-window.electronAPI.bluetoothPairingRequest((event, details) => {
-  const response = {}
-
-  switch (details.pairingKind) {
-    case 'confirm': {
-      response.confirmed = window.confirm(`Do you want to connect to device ${details.deviceId}?`)
-      break
-    }
-    case 'confirmPin': {
-      response.confirmed = window.confirm(`Does the pin ${details.pin} match the pin displayed on device ${details.deviceId}?`)
-      break
-    }
-    case 'providePin': {
-      const pin = window.prompt(`Please provide a pin for ${details.deviceId}.`)
-      if (pin) {
-        response.pin = pin
-        response.confirmed = true
-      } else {
-        response.confirmed = false
-      }
-    }
-  }
-
-  window.electronAPI.bluetoothPairingResponse(response)
-})

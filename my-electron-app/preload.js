@@ -7,7 +7,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cancelBluetoothRequest: (callback) => ipcRenderer.send('cancel-bluetooth-request', callback),
   // Ответить, что подключаемся
   acceptBluetoothRequest: (device) => ipcRenderer.send('accept-bluetooth-request', device),
-  // Непонятная мне шушара
-  bluetoothPairingRequest: (callback) => ipcRenderer.on('bluetooth-pairing-request', callback),
-  bluetoothPairingResponse: (response) => ipcRenderer.send('bluetooth-pairing-response', response)
 })
