@@ -4,15 +4,40 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
     <title>Web Bluetooth API</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
     <h1>Web Bluetooth API</h1>
 
-    <button id="clickme">Test Bluetooth</button>
+    <button id="clickme">Find Device</button>
     <button id="cancel">Cancel Bluetooth Request</button>
+    <button id="test">Test button</button>
 
     <p>Currently selected bluetooth device: <strong id="device-name"></strong></p>
 
+    <!-- Popup (device list) -->
+    <div class="devices">
+      <div class="devices__wrapper">
+        <div class="devices__content">
+          <div class="devices__header">
+            <h2 class="devices__header">Добавить устройство</h2>
+            <div class="devices__close-button">
+              <img src="icons/close-button.png" alt="close button">
+            </div>
+          </div>
+          <ul class="devices__list">
+            <!-- Сюда будут добавляться элементы -->
+            <!-- <li class="devices__list-item">Device 1</li>
+            <li class="devices__list-item">Device 2</li>
+            <li class="devices__list-item">Device 3</li>
+            <li class="devices__list-item">Device 4</li>
+            <li class="devices__list-item">Device 5</li>
+            <li class="devices__list-item">Device 6</li> -->
+          </ul>
+        </div>
+      </div>
+    </div>
     <script src="./renderer.js"></script>
   </body>
 </html>
